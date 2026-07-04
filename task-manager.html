@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Enlace a la hoja de estilos externa -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center" id="app">
+
+    <header class="w-full max-w-6xl mb-8 text-center">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-gray-100 drop-shadow-lg">PANEL DE TAREAS</h1>
+        <div class="mt-6 flex justify-center gap-2 items-center flex-wrap">
+            <span class="text-sm font-medium text-gray-300 mr-2">Filtrar por:</span>
+            <button
+                title="Todos"
+                @click="setFilter('all')"
+                :class="['w-6 h-6 rounded-full bg-gray-500 hover:ring-2 hover:ring-offset-1 hover:ring-blue-500 transition-all', { 'ring-2 ring-blue-500': activeFilter === 'all', 'opacity-50': activeFilter !== 'all' }]">
+            </button>
+            <button v-for="(label, key) in labels"
+                :key="key"
+                :title="key.charAt(0).toUpperCase() + key.slice(1)"
+                @click="setFilter(key)"
+                :class="['w-6 h-6 rounded-full', label.bg, 'hover:ring-2 hover:ring-offset-1 hover:ring-blue-500 transition-all', { 'ring-2 ring-blue-500': activeFilter === key, 'opacity-50': activeFilter !== 'all' && activeFilter !== key }]">
+            </button>
+        </div>
+    </header>
+
+    <main class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        
+        <section v-for="(column, columnName) in filteredBoard" :key="columnName" :id="'col-' + columnName" class="glass-column rounded-xl p-3 flex flex-col min-h-[400px]" @dragover.prevent="handleDragOver" @dragleave="handleDragLeave" @drop="handleDrop($event, columnName)">
+            <h2 :class="['text-xl font-bold mb-4 flex justify-between items-center', column.colorClass]">
+                <span class="flex items-center gap-2">
+                    <svg v-html="column.icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"></svg>
+                    {{ column.title }}
+                </span>
+                <span :class="['text-sm px-2 py-0.5 rounded-full', column.countBgClass, column.countColorClass]">{{ column.tasks.length }}</span>
+            </h2>
+            <transition-group tag="div" name="task-list" class="space-y-3 flex-1 min-h-[100px]">
+                <!-- Task Cards -->
+                <div v-for="task in column.tasks" :key="task.id"
+                    :data-task-id="task.id"
+                    class="glass-card p-3 rounded-lg cursor-grab relative group task-list-item"
+                    :draggable="activeFilter === 'all' && editingTask.id !== task.id"
+                    @dragstart="handleDragStart($event, task, columnName)"
+                    @dragend="handleDragEnd"                    @dblclick="showEditForm(task, columnName)">
+
+                    <!-- Edit Form -->
+                    <div v-if="editingTask.id === task.id">
+                        <textarea v-model="editingTask.text"
+                            @keydown.enter.prevent="updateTaskText"
+                            @keydown.escape="cancelEdit"
+                            @blur="updateTaskText"
+                            class="w-full text-sm font-medium bg-white/20 border-2 border-cyan-400 rounded-md p-1 -m-1 outline-none text-gray-100"
+                            v-focus>
+                        </textarea>
+                    </div>
+
+                    <!-- Task View -->
+                    <div v-else>
+                        <div :class="['w-10 h-2 rounded-full mb-2', labels[task.label || 'default'].bg]"></div>
+                        <span class="task-text text-sm font-medium break-words">{{ task.text }}</span>
+                        
+                        <!-- Action Buttons -->
+                        <div class="absolute top-2 right-2 flex gap-1">
+                            <button @click.stop="showLabelPicker($event, task)" class="bg-black/20 p-1 rounded-full text-xs opacity-0 group-hover:opacity-100 hover:bg-white/20 transition text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M15.585 2.415a.75.75 0 0 0-1.06-1.06L12.5 3.379a.75.75 0 0 0-1.06 0L9.414 1.354a.75.75 0 0 0-1.06 1.06L10.379 4.5a.75.75 0 0 0 0 1.06L8.354 7.586a.75.75 0 0 0 1.06 1.06L11.5 6.621a.75.75 0 0 0 1.06 0l2.025-2.025a.75.75 0 0 0 0-1.06L12.55 1.5l2.025 2.025a.75.75 0 0 0 1.06-1.06L13.586.415a.75.75 0 0 0-1.061 0L10.5 2.44l-2.025-2.025a.75.75 0 0 0-1.06 1.06L9.44 3.5.414 12.525a.75.75 0 0 0 1.06 1.06L11.5 3.56l2.025 2.025a.75.75 0 0 0 1.06-1.06L12.55 2.5l3.035-.085Z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <button @click.stop="deleteTask(task.id, columnName)" class="bg-black/20 p-1 rounded-full text-xs opacity-0 group-hover:opacity-100 hover:bg-rose-500/50 transition text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clip-rule="evenodd" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </transition-group>
+
+            <!-- Add Task Form -->
+            <div v-if="newTasks[columnName].showForm" class="mt-3">
+                <textarea v-model="newTasks[columnName].text"
+                    placeholder="Introduzca un título..."
+                    class="w-full p-2 rounded-md shadow-sm bg-white/10 border border-white/20 text-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none"
+                    v-focus>
+                </textarea>
+                <div class="mt-2 flex items-center gap-2">
+                    <span class="text-xs text-gray-400">Etiqueta:</span>
+                    <button v-for="(label, key) in labels"
+                        :key="key"
+                        :title="key.charAt(0).toUpperCase() + key.slice(1)"
+                        @click="newTasks[columnName].label = key"
+                        :class="['w-5 h-5 rounded-full', label.bg, 'hover:ring-2 hover:ring-offset-1 hover:ring-cyan-400 transition-all', { 'ring-2 ring-cyan-400': newTasks[columnName].label === key }]">
+                    </button>
+                </div>
+                <div class="mt-2 flex items-center gap-2">
+                    <button @click="addTask(columnName)" class="bg-cyan-500 text-white px-4 py-1 rounded-md hover:bg-cyan-600 font-semibold">Añadir</button>
+                    <button @click="newTasks[columnName].showForm = false" class="text-gray-400 text-2xl hover:text-white">&times;</button>
+                </div>
+            </div>
+
+            <button v-else @click="newTasks[columnName].showForm = true" class="mt-3 text-left text-gray-300 hover:bg-white/10 p-2 rounded-md transition">+ Añadir una tarjeta</button>
+        </section>
+
+    </main>
+
+    <!-- Label Picker -->
+    <div v-if="labelPicker.show"
+        class="label-picker absolute z-10 bg-gray-800/50 backdrop-blur-sm shadow-lg rounded-md p-2 flex gap-2 border border-white/10"
+        :style="{ left: labelPicker.x + 'px', top: labelPicker.y + 'px' }">
+        <button v-for="(label, key) in labels"
+            :key="key"
+            @click="updateTaskLabel(labelPicker.task, key)"
+            :class="['w-6 h-6 rounded-full', label.bg, 'hover:ring-2 hover:ring-offset-1 hover:ring-cyan-400']">
+        </button>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <transition name="fade">
+        <div v-if="confirmationModal.show" class="fixed inset-0 z-20 flex items-center justify-center">
+            <div class="absolute inset-0 bg-black/60" @click="cancelConfirm"></div>
+            <div class="confirmation-dialog relative z-30 glass-column rounded-lg p-6 w-full max-w-sm mx-4">
+                <p class="text-gray-100 text-lg text-center">{{ confirmationModal.message }}</p>
+                <div class="mt-6 flex justify-center gap-4">
+                    <button @click="cancelConfirm" class="px-6 py-2 rounded-md bg-white/10 text-gray-200 hover:bg-white/20 transition-colors font-semibold">
+                        Cancelar
+                    </button>
+                    <button @click="handleConfirm" class="px-6 py-2 rounded-md bg-rose-600 text-white hover:bg-rose-700 transition-colors font-semibold">
+                        Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- Enlace al script de la aplicación externa -->
+    <script src="app.js"></script>
+</body>
+</html>

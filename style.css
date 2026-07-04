@@ -1,0 +1,70 @@
+:root {
+    --background-image: url('images/wallpaper2.png');
+    --text-color-task: #E2E8F0;
+
+    --glass-column-bg: rgba(255, 255, 255, 0.05);
+    --glass-column-border: rgba(255, 255, 255, 0.1);
+
+    --glass-card-bg: rgba(255, 255, 255, 0.1);
+    --glass-card-border: rgba(255, 255, 255, 0.15);
+    --glass-card-hover-bg: rgba(255, 255, 255, 0.15);
+}
+
+body {
+    /* Puedes cambiar la URL por la imagen que prefieras */
+    background-image: var(--background-image);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Estilo Glassmorphism para columnas y tarjetas */
+.glass-column {
+    background: var(--glass-column-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-column-border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+.glass-card {
+    background: var(--glass-card-bg);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid var(--glass-card-border);
+    transition: background 0.2s, box-shadow 0.2s, border 0.2s;
+}
+.glass-card:hover {
+    background: var(--glass-card-hover-bg);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+.task-text {
+    color: var(--text-color-task);
+}
+
+/* Animaciones para la lista de tareas */
+.task-list-item {
+    transition: all 0.3s ease;
+}
+.task-list-enter-from,
+.task-list-leave-to {
+    opacity: 0;
+    transform: scale(0.8);
+}
+.task-list-leave-active {
+    position: absolute;
+    width: calc(100% - 1.5rem); /* Ajustar al padding de la columna */
+}
+.task-list-move {
+    transition: transform 0.3s ease;
+}
+
+/* Animación para el modal de confirmación */
+.fade-enter-active, .fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+.fade-enter-from, .fade-leave-to {
+    opacity: 0;
+}
