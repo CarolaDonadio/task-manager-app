@@ -1,8 +1,6 @@
 # 📋 Panel de Tareas (Task Manager App)
 
-<p align="center">
-  <img src="https://github.com/CarolaDonadio/task-manager-app/images/presentacion.png" alt="Task Manager App Screenshot" width="100%">
-</p>
+![Texto alternativo](images/presentacion.png)
 
 Una aplicación interactiva y elegante para la gestión visual de tareas (Tablero Kanban) construida con **Vue 3** y estilizada mediante **Tailwind CSS**. Este proyecto implementa una estética de diseño moderna basada en **Glassmorphic UI**, ofreciendo interfaces translúcidas con desenfoque de fondo y efectos visuales fluidos.
 
